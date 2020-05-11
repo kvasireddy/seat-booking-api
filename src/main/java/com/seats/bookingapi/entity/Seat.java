@@ -23,7 +23,7 @@ public class Seat implements Comparable<Seat> {
 	private Integer colum;
 	private boolean aisleSeat;
 
-	private boolean found;
+	private boolean locked;
 
 	private double distanceFromRoot;
 
@@ -31,17 +31,17 @@ public class Seat implements Comparable<Seat> {
 	@JoinColumn(name = "bookingId", nullable = true) // If value is null, then the seat is available to book
 	private Booking booking;
 
-	@ManyToOne
 
-	private Vehicle vehicle;
-
-	public Seat(Integer row, Integer colum, boolean isAilseSeat, Booking booking, Vehicle vehicle) {
+	public Seat(Integer row, Integer colum, boolean isAilseSeat, Booking booking) {
 		this.row = row;
 		this.colum = colum;
 		this.aisleSeat = isAilseSeat;
 		this.booking = booking;
-		this.vehicle = vehicle;
-		this.distanceFromRoot = Math.sqrt(row* row + colum * colum);
+		//this.distanceFromRoot = Math.sqrt(row* row + colum * colum);
+	}
+	
+	public double getDistanceFromRoot(Seat seat) {
+		return Math.sqrt((this.row - seat.row)* (this.row - seat.row) + (this.colum - seat.colum) * (this.colum - seat.colum) );
 	}
 
 	@Override

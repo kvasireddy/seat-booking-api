@@ -3,6 +3,7 @@ package com.seats.bookingapi.service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,6 +21,7 @@ import com.seats.bookingapi.entity.Seat;
 import com.seats.bookingapi.entity.Vehicle;
 import com.seats.bookingapi.entity.Vehicle.VehicleType;
 import com.seats.bookingapi.repository.VehiclesRepository;
+import com.sun.rowset.internal.Row;
 
 @Service
 public class SeatBookingService {
@@ -52,13 +54,8 @@ public class SeatBookingService {
 
 	public List<Seat> getAvailableSeats(Long flightId) throws Exception {
 		Vehicle vehicle = getVehicle(flightId);
-		Seat[][] allSeatsIn2D = vehicle.getSeats();
-		Set<Seat> allSeats = new HashSet<>();
-		for (Seat[] arr : allSeatsIn2D) {
-			allSeats.addAll(Arrays.asList(arr));
-		}
-
-		List<Seat> bookableSeats = allSeats.stream().filter(Seat::isSeatAvailableTobook).collect(Collectors.toList());
+		List<Seat> allSeats = vehicle.getSeats();
+		List<Seat> bookableSeats = allSeats.stream().filter( s -> s.isSeatAvailableTobook() && !s.isLocked()).collect(Collectors.toList());
 		Collections.sort(bookableSeats);
 		return bookableSeats;
 	}
@@ -70,7 +67,39 @@ public class SeatBookingService {
 		}
 		return vehicle.get();
 	}
+	
+	
+	
+	public Seat findClosestSeat(final Seat root, List<Seat> availableSeats) {
+		Comparator<Seat> byDistanceFromRoot = (Seat s1, Seat s2) -> {
+			int comparedSeats = Double.compare(s1.getDistanceFromRoot(root), s2.getDistanceFromRoot(root));
+			if(comparedSeats == 0) {
+				if(root.isAisleSeat()) {
+					if(s1.isAisleSeat()) {
+						return 1;
+					} if(s2.isAisleSeat()) {
+						return -1;
+					}
+				} if(root.getRow() == s1.getRow()) {
+					return -1;
+				} if(root.getRow() == s2.getRow()) {
+					return 1;
+				}
+			}
+			return comparedSeats;
+		};
+		 Optional<Seat> mayNextSeat = availableSeats.stream().min(byDistanceFromRoot);
+		return mayNextSeat.isPresent() ? mayNextSeat.get() : root;
+	}
 
+	
+	/**
+	 * This method is deprecated. Please Use findClosestSeat(...
+	 * @param root
+	 * @param seats
+	 * @return
+	 */
+	@Deprecated
 	public Seat findNextShortestDistanceSeat(Seat root, List<Seat> seats) { //Send only bookable seats.  
 
 		double minDistance = 1000;
@@ -79,7 +108,7 @@ public class SeatBookingService {
 		Seat closestSeat = null;
 
 		for (Seat s : seats) {
-			if (!s.isFound()) {
+			if (!s.isLocked()) {
 				int row2 = s.getRow();
 				int col2 = s.getColum();
 				double distance = Math.sqrt((row2 - row1) * (row2 - row1) + (col2 - col1) * (col2 - col1));

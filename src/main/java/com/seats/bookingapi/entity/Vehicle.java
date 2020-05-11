@@ -1,5 +1,7 @@
 package com.seats.bookingapi.entity;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import javax.persistence.Entity;
@@ -26,7 +28,7 @@ public abstract class Vehicle {
 	private final int numberOfColumns;
 
 	@OneToMany
-	private final Seat[][] seats;
+	private final List<Seat> seats;
 
 	private final Set<Integer> aisleSeats;
 
@@ -34,10 +36,11 @@ public abstract class Vehicle {
 		this.numberOfColumns = numberOfColumns;
 		this.numberOfRows = numberOfColumns;
 		this.type = type;
-		this.seats = new Seat[numberOfRows][numberOfColumns];
+		//this.seats = new Seat[numberOfRows][numberOfColumns];
+		this.seats = new ArrayList<Seat>();
 		for (int i = 0; i < numberOfRows; i++) {
 			for (int j = 0; j < numberOfColumns; j++) {
-				this.seats[i][j] = new Seat(i, j, aisleSeats.contains(Integer.valueOf(j)), null, this);
+				this.seats.add(new Seat(i, j, aisleSeats.contains(Integer.valueOf(j)), null));
 			}
 		}
 		this.aisleSeats = aisleSeats;
