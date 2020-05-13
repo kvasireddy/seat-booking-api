@@ -1,0 +1,29 @@
+server:
+  port: 8003
+
+  
+spring:
+  application:
+    admin:
+      enabled: false
+  jmx:
+    enabled: false
+  h2:
+    console:
+      enabled: true
+  datasource:
+    url: jdbc:h2:file:./bookingservice_database_dev;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: bookingservice
+    password: bookingservice
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+   # properties:
+    #  hibernate:
+     #   default_schema: booking_service
+ #logging:
+   #level:
+     #root: DEBUG
+logging:  level:    root: INFO
+    
+#spring.jmx.enabled

@@ -1,41 +1,35 @@
 package com.seats.bookingapi.service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.seats.bookingapi.beans.DomesticFlight;
-import com.seats.bookingapi.beans.InternationalFlight;
+import com.seats.bookingapi.beans.Vehicle;
+import com.seats.bookingapi.beans.VehicleType;
+import com.seats.bookingapi.entity.DomesticFlight;
 import com.seats.bookingapi.entity.Seat;
-import com.seats.bookingapi.entity.Vehicle;
-import com.seats.bookingapi.entity.Vehicle.VehicleType;
-import com.seats.bookingapi.repository.VehiclesRepository;
-import com.sun.rowset.internal.Row;
+import com.seats.bookingapi.repository.DomesticVehiclesRepository;
 
 @Service
 public class SeatBookingService {
 
 	@Autowired
-	private VehiclesRepository vehicleRepo;
+	private DomesticVehiclesRepository domesticFlightRepository;
+	
+	
+	
 
 	public Vehicle createDomesticFlight(String name) {
-		return vehicleRepo.saveAndFlush(new DomesticFlight(name));
+		return domesticFlightRepository.save(new DomesticFlight(name));
 	}
 
-	public Vehicle createInternationFlight(String name) {
-		return vehicleRepo.saveAndFlush(new InternationalFlight(name));
-	}
 
 	/**
 	 * Creates the flight of your choice. Default is Domestic Flight.
@@ -45,9 +39,10 @@ public class SeatBookingService {
 	 * @return
 	 */
 	public Vehicle createFlight(String name, VehicleType type) {
-		if (type != null && type.equals(VehicleType.INTERNATIONAL_FLIGHT)) {
-			return createInternationFlight(name);
-		}
+		/*
+		 * if (type != null && type.equals(VehicleType.INTERNATIONAL_FLIGHT)) { return
+		 * createInternationFlight(name); }
+		 */
 		return createDomesticFlight(name);
 	}
 
@@ -61,28 +56,29 @@ public class SeatBookingService {
 	}
 
 	public Vehicle getVehicle(Long flightId) throws Exception {
-		Optional<Vehicle> vehicle = vehicleRepo.findById(flightId);
+		Optional<DomesticFlight> vehicle = domesticFlightRepository.findById(flightId);
 		if (vehicle.isEmpty()) {
 			throw new Exception("Please choose the right Vehicle ID");
 		}
-		return vehicle.get();
+		return (Vehicle) vehicle.get();
 	}
 	
 	
 	
 	public Seat findClosestSeat(final Seat root, List<Seat> availableSeats) {
+		availableSeats.remove(root);
 		Comparator<Seat> byDistanceFromRoot = (Seat s1, Seat s2) -> {
 			int comparedSeats = Double.compare(s1.getDistanceFromRoot(root), s2.getDistanceFromRoot(root));
 			if(comparedSeats == 0) {
 				if(root.isAisleSeat()) {
 					if(s1.isAisleSeat()) {
-						return 1;
-					} if(s2.isAisleSeat()) {
 						return -1;
+					} if(s2.isAisleSeat()) {
+						return 1;
 					}
-				} if(root.getRow() == s1.getRow()) {
+				} if(root.getSeatRow() == s1.getSeatRow()) {
 					return -1;
-				} if(root.getRow() == s2.getRow()) {
+				} if(root.getSeatRow() == s2.getSeatRow()) {
 					return 1;
 				}
 			}
@@ -93,39 +89,37 @@ public class SeatBookingService {
 	}
 
 	
-	/**
-	 * This method is deprecated. Please Use findClosestSeat(...
-	 * @param root
-	 * @param seats
-	 * @return
-	 */
-	@Deprecated
-	public Seat findNextShortestDistanceSeat(Seat root, List<Seat> seats) { //Send only bookable seats.  
-
-		double minDistance = 1000;
-		int row1 = root.getRow();
-		int col1 = root.getColum();
-		Seat closestSeat = null;
-
-		for (Seat s : seats) {
-			if (!s.isLocked()) {
-				int row2 = s.getRow();
-				int col2 = s.getColum();
-				double distance = Math.sqrt((row2 - row1) * (row2 - row1) + (col2 - col1) * (col2 - col1));
-				if (distance == minDistance) {
-					if (root.getRow() == s.getRow()) {
-						closestSeat = s;
+	public Set<Seat> findAdjacentSeats(Seat[][] seats, Seat root, int numberOfSeats, Set<Seat> adjacentSeats){
+		if(adjacentSeats!= null && numberOfSeats == adjacentSeats.size()) {
+			return adjacentSeats;
+		}
+		int row = root.getSeatRow();
+		for(int i = row; row<seats.length; row++) {
+			if(i == root.getSeatRow()) {
+				for(int j = root.getSeatColumn()+1; j< seats[i].length; j++) {
+					Seat seatToCheck = seats[i][j];
+					if(seatToCheck.isSeatAvailableTobook() && root.isAisleSeat() && seatToCheck.isAisleSeat()) {
+						findAdjacentSeats(seats, seatToCheck, numberOfSeats, new HashSet<>());
+					} else {
+						if(seatToCheck.isSeatAvailableTobook()) {
+							adjacentSeats.add(root);
+							adjacentSeats.add(seatToCheck);
+						}
 					}
 				}
-				if (distance < minDistance) {
-					minDistance = distance;
-					closestSeat = s;
+			} else {
+				for (int j = 0; j< seats[i].length; j++) {
+					if(seats[j][j].isSeatAvailableTobook()) {
+						adjacentSeats = new HashSet<>();
+						adjacentSeats.add(seats[i][j]);
+						findAdjacentSeats(seats, seats[j][j], numberOfSeats, new HashSet<>());
+					}
 				}
+				
 			}
 		}
-
-		return closestSeat;
-
+		return adjacentSeats;
 	}
+
 
 }

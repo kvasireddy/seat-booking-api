@@ -1,41 +1,41 @@
-package com.seats.bookingapi.entity;
+package com.seats.bookingapi.beans;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 import javax.persistence.OneToMany;
 
+import com.seats.bookingapi.entity.Seat;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-@Entity
-public abstract class Vehicle {
+@MappedSuperclass
+public class Vehicle {
+	
+	private @Id @GeneratedValue Long vehicleId;
 
-	public enum VehicleType {
-		DOMESTiC_FLIGHT, INTERNATIONAL_FLIGHT;
-	}
-
-	private @Id @GeneratedValue Long id;
-
-	private final VehicleType type;
+	private final VehicleType vehicleType;
 
 	private final int numberOfRows;
 
 	private final int numberOfColumns;
 
-	@OneToMany
+	@OneToMany(cascade=CascadeType.ALL)
 	private final List<Seat> seats;
 
-	private final Set<Integer> aisleSeats;
 
 	public Vehicle(VehicleType type, int numberOfRows, int numberOfColumns, Set<Integer> aisleSeats) {
 		this.numberOfColumns = numberOfColumns;
-		this.numberOfRows = numberOfColumns;
-		this.type = type;
+		this.numberOfRows = numberOfRows;
+		this.vehicleType = type;
 		//this.seats = new Seat[numberOfRows][numberOfColumns];
 		this.seats = new ArrayList<Seat>();
 		for (int i = 0; i < numberOfRows; i++) {
@@ -43,7 +43,6 @@ public abstract class Vehicle {
 				this.seats.add(new Seat(i, j, aisleSeats.contains(Integer.valueOf(j)), null));
 			}
 		}
-		this.aisleSeats = aisleSeats;
 	}
 
 }

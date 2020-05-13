@@ -2,8 +2,6 @@ package com.seats.bookingapi.beans;
 
 import java.util.Set;
 
-import com.seats.bookingapi.entity.Vehicle;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -17,5 +15,6 @@ public abstract class Flight extends Vehicle{
 		super(type, numberOfRows, numberOfColumns, aisleSeats);
 		this.flightName = name;
 	}
+	
 
 }
